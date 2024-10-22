@@ -26,12 +26,19 @@
 # *
 # **************************************************************************
 
+import json
 
 from foldxsuite.protocols import ProtocolFoldX
 from foldxsuite.constants import *
 
 from pwem.wizards import EmWizard
 import pwem.convert as emconv
+from pwchem.wizards import SelectChainWizardQT, SelectResidueWizardQT
+
+SelectChainWizardQT().addTarget(protocol=ProtocolFoldX,
+                              targets=['mutChain'],
+                              inputs=['inputAtomStruct'],
+                              outputs=['mutChain'])
 
 
 class AddMutationsFoldX(EmWizard):
@@ -39,19 +46,7 @@ class AddMutationsFoldX(EmWizard):
     
     def getPositions(self, form):
         protocol = form.protocol
-        ROIOrigin = protocol.ROIOrigin.get()
-
-        if ROIOrigin == 0:
-            allRanPos = protocol.RangPositions.get().split(", ")
-        else:
-            structROI = protocol.inputStructROI.get()
-            allRanPos = []
-            for item in structROI:
-                chain_res = item.getDecodedCResidues()
-                for roi in chain_res:
-                    res = roi.split("_")
-                    if f"{res[1]}-{res[1]}" not in allRanPos:
-                        allRanPos.append(f"{res[1]}-{res[1]}")
+        allRanPos = protocol.RangPositions.get().split(", ")
         return allRanPos
 
     def getaaTo(self, form):
@@ -74,24 +69,60 @@ class AddMutationsFoldX(EmWizard):
                     res_id = residue[0]
                     res_type = residue[1]
                     chainResidues[chainID][res_id] = res_type
-
+        
         return chainResidues
     
+    def getchain(self, form):
+        protocol = form.protocol
+        chain = json.loads(protocol.mutChain.get())['chain']
+        return chain
+    
+    def getROIOrigen(self, form):
+        protocol = form.protocol
+        ROIOrigin = protocol.ROIOrigin.get()
+        return ROIOrigin
+    
+    def getSructROI(self, form):
+        protocol = form.protocol
+        inputStructROI = protocol.inputStructROI.get()
+        return inputStructROI        
+
     def getMutations(self, form):
-        allRanPos = self.getPositions(form)
         aaTo = self.getaaTo(form)
         chainResidues = self.getchainResidues(form)
+        ROIOrigin = self.getROIOrigen(form)
         mutations = []     
-        
-        for ranPos in allRanPos:
-            ran = ranPos.split("-")
-            for chain, residues_dict in chainResidues.items():
-                for pos in range(int(ran[0]), int(ran[1]) + 1):
-                    if pos in residues_dict:  
-                        aaFrom = AA_THREE_TO_ONE[residues_dict[pos]]
-                        mutation = '{}{}{}{}'.format(aaFrom, chain, pos, aaTo)
-                        mutations.append(mutation)
+
+        if ROIOrigin == 0:
+            allRanPos = self.getPositions(form)
+            chain = self.getchain(form)       
+            for ranPos in allRanPos:
+                ran = ranPos.split("-")
+                for chain, residues_dict in chainResidues.items():
+                    if chain == self.getchain(form):
+                        for pos in range(int(ran[0]), int(ran[1]) + 1):
+                            if pos in residues_dict:  
+                                aaFrom = AA_THREE_TO_ONE[residues_dict[pos]]
+                                mutation = '{}{}{}{}'.format(aaFrom, chain, pos, aaTo)
+                                mutations.append(mutation)
+        else:
+            structROI = self.getSructROI(form)
+            allRanPos = []
+            for item in structROI:
+                chain_res = item.getDecodedCResidues()
+                for roi in chain_res:
+                    res = roi.split("_")
+                    chain = res[0]
+                    pos = int(res[1])
+                    for ch, residues_dict in chainResidues.items():
+                        if ch == chain:
+                            if pos in residues_dict:  
+                                aaFrom = AA_THREE_TO_ONE[residues_dict[pos]]
+                                mutation = '{}{}{}{}'.format(aaFrom, chain, pos, aaTo)
+                                mutations.append(mutation)
+
         return mutations
+    
     
     def show(self, form, *params):
         protocol = form.protocol

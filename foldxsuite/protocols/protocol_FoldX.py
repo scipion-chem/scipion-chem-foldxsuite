@@ -33,10 +33,14 @@ import numpy as np
 import os, re
 
 from pyworkflow.constants import BETA
+from pyworkflow.object import Object, Float, String
 import pyworkflow.protocol.params as params
 from pyworkflow.utils import Message
+
 from pwem.protocols import EMProtocol
-from pwem.objects.data import AtomStruct
+from pwem.objects.data import AtomStruct, SetOfStats
+from pwchem.objects import SetOfStructROIs
+
 import pwem.convert as emconv
 from pwchem.utils.utils import cleanPDB
 
@@ -64,6 +68,10 @@ class ProtocolFoldX(EMProtocol):
         form.addParam('ROIOrigin', params.EnumParam, default=0, condition='multiPosition',
                        label='Source of ROIs: ', choices=['Manual', 'SetOfStructROIs'],
                        help='Select the source of the regions of interest.')
+
+        form.addParam('mutChain', params.StringParam, allowsNull=False, 
+                      label='Chain to mutate', condition='ROIOrigin==0 and multiPosition',
+                      help='Specify the protein chain to mutate.')
         
         form.addParam('RangPositions', params.StringParam, allowsNull=False,
                       label='Range of positions: ', condition='ROIOrigin==0 and multiPosition',
@@ -87,7 +95,6 @@ class ProtocolFoldX(EMProtocol):
                       help='Define the substitute residue which will be introduced with its '
                            'one-letter code.\nFor the one-letter aminoacid code, see '
                            'https://foldxsuite.crg.eu/allowed-residues.')
-        
 
         form.addParam('addMutation', params.LabelParam,
                       label='Add defined mutations', condition='multiPosition',
@@ -122,7 +129,7 @@ class ProtocolFoldX(EMProtocol):
         self._insertFunctionStep(self.computeDDG)
         self._insertFunctionStep(self.processResults)
         self._insertFunctionStep(self.calculateZScore)
-
+        self._insertFunctionStep(self.createOutputStep)
 
     def computeDDG(self):
         fnPDB = "atomicStructure.pdb"
@@ -171,7 +178,6 @@ class ProtocolFoldX(EMProtocol):
             out_ddg_sm = out_ddg_sm.rstrip()
             fddg.write(out_ddg_sm)
 
-
     def calculateZScore(self):
         pssm_process = self._getExtraPath('FoldX_SM.tsv')
         ddg_user = self._getExtraPath('FoldX_zscore.tsv')
@@ -213,7 +219,34 @@ class ProtocolFoldX(EMProtocol):
         with open(ddg_user, "w+") as fuser:
             fuser.write(user_zscores_str)
 
+    def createOutputStep(self):
+        foldx_process = self._getExtraPath('FoldX_SM.tsv')  
+        ddg_user = self._getExtraPath('FoldX_zscore.tsv')
+      
+        outputSet = SetOfStats.create(self.getPath())
+        
+        mutations = []
+        with open(ddg_user, "r") as f:
+            content = f.readlines()
+            for line in content[1:]:  
+                mut = line.split('\t')
+                mutations.append(mut[0])
 
+        with open(foldx_process, "r") as f:
+            results = f.readlines()
+        
+        for line in results[1:]:                
+            fields = line.strip().split("\t")
+            
+            if fields[0] in mutations:
+                newItem = Object()
+                setattr(newItem, 'Mut', String(fields[0]))  
+                setattr(newItem, 'ddg', Float(fields[1]))   
+                setattr(newItem, 'zscore', Float(fields[2])) 
+                outputSet.append(newItem)
+
+        self._defineOutputs(outputStats=outputSet)
+        self._defineTransformRelation(self.inputAtomStruct, outputSet)             
 
     # --------------------------- INFO functions -----------------------------------
     def _validate(self):
