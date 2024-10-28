@@ -31,7 +31,7 @@ the programs.
 The installation path or any other of your preference has to be set in *FOLDX_HOME* in 
 *scipion.conf* file.
 
-The steps to download the Rosetta files are as follows:
+The steps to download the FoldX files are as follows:
 
     - Go to the FoldX software page <https://foldxsuite.crg.eu>`_.
     - FoldX is available through academic and commercial licenses. To download the software, 
