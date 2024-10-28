@@ -240,7 +240,7 @@ class ProtocolFoldX(EMProtocol):
             
             if fields[0] in mutations:
                 newItem = Object()
-                setattr(newItem, 'Mut', String(fields[0]))  
+                newItem.setObjLabel(label=str(fields[0]))
                 setattr(newItem, 'ddg', Float(fields[1]))   
                 setattr(newItem, 'zscore', Float(fields[2])) 
                 outputSet.append(newItem)
