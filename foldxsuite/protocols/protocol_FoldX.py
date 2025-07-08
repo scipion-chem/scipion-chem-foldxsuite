@@ -52,6 +52,48 @@ class ProtocolFoldX(EMProtocol):
     This protocol computes the change in free energy at the interface between two proteins
     when there is a mutation in one of the proteins. The result is returned standardized as 
     a z-score.
+
+User IA Manual: FoldX Protocol
+
+The FoldX protocol provides an interface to the FoldX energy calculation suite,
+enabling users to analyze protein stability, evaluate mutations, and perform
+structure-based energy estimations directly within the Scipion-Chem framework.
+It supports a variety of FoldX commands and integrates them into reproducible,
+modular workflows.
+
+To use this protocol, the user must provide a protein structure in PDB format.
+This structure should be well-formed, with proper residue and atom naming
+consistent with FoldX standards. The user may also specify whether the structure
+should be repaired prior to calculations, in which case the `RepairPDB` function
+is executed automatically to correct side-chain geometries and optimize hydrogen
+bonding.
+
+The core function of the protocol is defined by selecting a FoldX command.
+Supported options include energy evaluation of the native structure, mutation
+analysis, alanine scanning, complex stability assessment, and position-specific
+scoring. Each mode requires specific inputs; for example, mutation scanning
+requires a list of mutations in the FoldX format, while interaction energy
+calculations need a multi-chain complex as input.
+
+Additional options include specifying the number of runs to ensure statistical
+convergence, setting pH and ionic strength, and defining whether to include water
+molecules or cofactors in the energy model. These parameters allow users to
+customize the physical environment simulated by FoldX to match experimental
+conditions or modeling assumptions.
+
+Upon execution, the protocol produces energy values for each operation, such as
+??G for mutations or interaction energies for complexes. These results are stored
+in structured tables and can be visualized or passed to downstream steps for
+comparison, ranking, or further modeling. The protocol also generates modified
+structure files reflecting the mutations or structural changes applied during
+the run.
+
+In summary, the FoldX protocol offers a streamlined way to perform high-quality
+energy-based evaluations of protein structures. It provides flexible control over
+FoldX operations, ensures compatibility with Scipion workflows, and supports
+rational design of protein variants or complexes based on energetics and
+structural criteria.
+
     """
     _label = 'FoldX'
     _devStatus = BETA
