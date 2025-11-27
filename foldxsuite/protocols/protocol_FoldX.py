@@ -220,33 +220,52 @@ class ProtocolFoldX(EMProtocol):
             fuser.write(user_zscores_str)
 
     def createOutputStep(self):
-        foldx_process = self._getExtraPath('FoldX_SM.tsv')  
+        foldx_process = self._getExtraPath('FoldX_SM.tsv')
         ddg_user = self._getExtraPath('FoldX_zscore.tsv')
-      
         outputSet = SetOfStats.create(self.getPath())
-        
         mutations = []
-        with open(ddg_user, "r") as f:
-            content = f.readlines()
-            for line in content[1:]:  
-                mut = line.split('\t')
-                mutations.append(mut[0])
+        zscore_map = {}
 
+        with open(ddg_user, "r") as f:
+            lines = f.readlines()
+            for line in lines[1:]:
+                if not line.strip():
+                    continue
+                cols = line.strip().split('\t')
+                mutName = cols[0]
+                mutations.append(mutName)
+                if len(cols) > 2:
+                    try:
+                        zscore_map[mutName] = float(cols[2])
+                    except ValueError:
+                        pass
         with open(foldx_process, "r") as f:
             results = f.readlines()
-        
-        for line in results[1:]:                
+        for line in results[1:]:
+            if not line.strip():
+                continue
             fields = line.strip().split("\t")
-            
-            if fields[0] in mutations:
-                newItem = Object()
-                newItem.setObjLabel(label=str(fields[0]))
-                setattr(newItem, 'ddg', Float(fields[1]))   
-                setattr(newItem, 'zscore', Float(fields[2])) 
-                outputSet.append(newItem)
+            mutName = fields[0]
+            if mutName not in mutations:
+                continue
+            item = Object()
+            item.setObjLabel(label=mutName)
+            item.mutation = String(mutName)
+            try:
+                item.ddg = Float(float(fields[1]))
+            except (ValueError, IndexError):
+                item.ddg = Float(0.0)
+            if mutName in zscore_map:
+                item.zscore = Float(zscore_map[mutName])
+            else:
+                try:
+                    item.zscore = Float(float(fields[2]))
+                except (ValueError, IndexError):
+                    item.zscore = Float(0.0)
+            outputSet.append(item)
 
         self._defineOutputs(outputStats=outputSet)
-        self._defineTransformRelation(self.inputAtomStruct, outputSet)             
+        self._defineTransformRelation(self.inputAtomStruct, outputSet)
 
     # --------------------------- INFO functions -----------------------------------
     def _validate(self):

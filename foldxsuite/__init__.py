@@ -90,4 +90,4 @@ class Plugin(pwem.Plugin):
         Run FoldX command from a given protocol. 
         """        
         args += ' --rotabaseLocation="%s"'%(os.path.join(cls.getVar(FOLDX_HOME),"rotabase.txt"))
-        protocol.runJob(os.path.join(cls.getVar(FOLDX_HOME),"foldx_20241231"), args)
+        protocol.runJob(os.path.join(cls.getVar(FOLDX_HOME),"foldx_20251231"), args)
