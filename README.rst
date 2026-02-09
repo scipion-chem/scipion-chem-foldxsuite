@@ -40,6 +40,12 @@ The steps to download the FoldX files are as follows:
     - With the license (a link is sent to your email) you can download the FoldX files.
     - Save the package wherever you prefer.
     - Write the installation path in the *FOLDX_HOME* variable in the *scipion.conf* file.
+    - Before installing the plugin, you must create a symbolic link to the FoldX executable.
+    - FoldX executable names include the version number (e.g. ``foldx_20270131``), which may change between releases.
+    - To ensure compatibility with the plugin, create a symbolic link named ``foldx`` pointing to your FoldX executable.
+        Example::
+                cd $FOLDX_HOME
+                ln -s foldx_20270131 foldx
 
 
 2. **Install the plugin in Scipion**
