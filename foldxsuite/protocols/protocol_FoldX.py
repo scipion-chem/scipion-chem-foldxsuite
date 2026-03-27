@@ -49,9 +49,111 @@ from foldxsuite.constants import *
 
 class ProtocolFoldX(EMProtocol):
     """
-    This protocol computes the change in free energy at the interface between two proteins
-    when there is a mutation in one of the proteins. The result is returned standardized as 
-    a z-score.
+    AI Generated:
+
+      ProtocolFoldX - User Manual
+
+      Overview
+      --------
+      The ProtocolFoldX protocol computes the effect of mutations on the
+      binding free energy (ΔΔG) of protein–protein interactions using the
+      FoldX engine. It evaluates how specific amino acid substitutions impact
+      the stability of an interface and reports the results as normalized
+      z-scores.
+
+      This protocol is particularly useful for studying mutation effects,
+      protein engineering, and assessing the energetic contribution of residues
+      at interaction interfaces.
+
+      Input Requirements
+      ------------------
+      1. **Protein Complex Structure**:
+         - AtomStruct object containing a protein–protein complex.
+         - Must include both interacting partners in the same structure.
+         - Structure should be properly formatted (PDB or compatible).
+
+      2. **Mutation Definition**:
+         - List of mutations using the format:
+           "[aaFrom][Chain][Position][aaTo]"
+         - Example: CA182Y (Cys → Tyr at position 182 in chain A).
+         - Multiple mutations can be defined, one per line.
+
+      3. **Optional ROI-based Mutation**:
+         - Mutations can be generated automatically over:
+           - User-defined residue ranges, or
+           - Structural regions (SetOfStructROIs).
+
+      Workflow
+      --------
+      1. **Structure Preparation**:
+         - Cleans the input PDB structure.
+         - Ensures compatibility with FoldX requirements.
+
+      2. **Mutation Setup**:
+         - Parses user-defined mutations.
+         - Supports:
+           - Single mutations
+           - Multiple mutations
+           - Saturation mutagenesis (mutation to all amino acids)
+
+      3. **FoldX Execution**:
+         - Runs FoldX PSSM (Position-Specific Scoring Matrix) calculation.
+         - Computes ΔΔG values for all specified mutations.
+
+      4. **Result Processing**:
+         - Extracts ΔΔG values for each mutation.
+         - Expands results into mutation-specific entries.
+
+      5. **Z-score Calculation**:
+         - Computes mean and standard deviation across all mutations.
+         - Normalizes ΔΔG values into z-scores.
+         - Filters results based on user-defined mutations.
+
+      6. **Output Assembly**:
+         - Organizes mutation results into a structured output set.
+         - Associates each mutation with its ΔΔG and z-score.
+
+      Outputs
+      -------
+      - **Mutation Statistics (SetOfStats)**:
+        - Each entry includes:
+          - Mutation identifier
+          - ΔΔG value (binding free energy change)
+          - Z-score (normalized energy impact)
+
+      - **Intermediate Files**:
+        - Processed mutation-energy table (TSV format)
+        - Z-score results file
+
+      Advanced Options
+      ----------------
+      - Saturation mutagenesis (mutation to all amino acids).
+      - ROI-based mutation generation.
+      - Custom mutation lists.
+      - Multi-position mutation analysis.
+
+      Validation & Warnings
+      ---------------------
+      - Input structure must contain valid protein chains.
+      - Mutation format must follow the required syntax.
+      - Chain identifiers must exist in the structure.
+      - Residue positions must be within valid ranges.
+      - Wild-type amino acids must match the structure.
+
+      Practical Recommendations
+      -------------------------
+      - Verify input structure integrity before running the protocol.
+      - Use saturation mutagenesis for exploratory studies.
+      - Focus on interface residues for binding analysis.
+      - Inspect z-scores to identify impactful mutations.
+
+      Final Perspective
+      -----------------
+      ProtocolFoldX provides a robust and automated framework for evaluating
+      the energetic impact of mutations on protein–protein interactions. By
+      combining ΔΔG calculations with statistical normalization, it enables
+      systematic analysis of mutation effects, supporting protein design,
+      stability studies, and interaction optimization workflows.
     """
     _label = 'FoldX'
     _devStatus = BETA
