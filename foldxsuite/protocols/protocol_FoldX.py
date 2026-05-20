@@ -27,7 +27,7 @@
 # **************************************************************************
 
 """
-Wrapper around the FoldX method from http://compbio.clemson.edu/saambe_webserver/
+Wrapper around the FoldX method from https://foldxsuite.crg.es/documentation#manual
 """
 import numpy as np
 import os, re
