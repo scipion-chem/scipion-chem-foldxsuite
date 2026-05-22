@@ -1,4 +1,4 @@
 include *.txt
 include *.rst
 include LICENSE
-include alexov/protocols.conf
+include foldxsuite/protocols.conf
