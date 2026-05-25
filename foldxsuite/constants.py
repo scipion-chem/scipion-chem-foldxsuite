@@ -32,6 +32,8 @@ AA_THREE_TO_ONE = {'ALA': 'A', 'CYS': 'C', 'ASP': 'D', 'GLU': 'E', 'PHE': 'F',
                    'MLZ': 'k', 'MLY': 'm', 'M3L': 'l', 'H1S': 'o', 'H2S': 'e',
                    'H3S': 'f', 'ALL': 'X', 'HZP':'P'}
 
+FOLDX_SM_FILE = 'FoldX_SM.tsv'
+FOLDX_ZSCORE_FILE = 'FoldX_zscore.tsv'
 
 # ------------------------------------ INSTALLATION VARIABLES ------------------------------------
 PLUGIN_NAME = 'FOLDXSUITE'
