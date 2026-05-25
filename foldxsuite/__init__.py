@@ -48,7 +48,7 @@ class Plugin(pwem.Plugin):
     _<binaryNameInLowercase>Binary will be a folder inside _<packageNameInLowercase>Home and its name will be <binaryName>.
     """
     _url = "https://github.com/scipion-chem/scipion-chem-foldxsuite"
-    _supportedVersions = V1_0  # binary version
+    _supportedVersions = V5_1  # binary version. This version can change in a future!
 
 
     @classmethod
@@ -59,8 +59,8 @@ class Plugin(pwem.Plugin):
         <packageNameInUppercase>_HOME will contain the path to the package installation."
         <packageNameInUppercase>_ENV will contain the name of the conda enviroment for that package."
         """
-        cls._defineVar(FOLDX_HOME, "FoldX")
-        cls._defineEmVar(FOLDX_HOME, f"FoldX-{V1_0}")
+        cls._defineVar(FOLDX_HOME, "foldx")
+        cls._defineEmVar(FOLDX_HOME, f"foldx-{V5_1}")
 
 
     @classmethod
