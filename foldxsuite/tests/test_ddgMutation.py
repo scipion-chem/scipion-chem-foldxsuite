@@ -31,7 +31,6 @@ from pwem.protocols import ProtImportPdb
 # Scipion chem imports
 from ..protocols import ProtocolDDGFoldX
 from pwchem.tests import TestImportBase
-from ..constants import AA_THREE_TO_ONE
 
 class TestDDGFoldX(BaseTest):
     @classmethod
