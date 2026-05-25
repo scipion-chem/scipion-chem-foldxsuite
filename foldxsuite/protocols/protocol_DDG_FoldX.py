@@ -86,10 +86,6 @@ class ProtocolDDGFoldX(EMProtocol):
                       label='Input structural ROI', condition='ROIOrigin==1 and multiPosition',
                       allowsNull=False, help='Select the source of the ROIs.') 
 
-        form.addParam('roiChain', params.StringParam, allowsNull=False,
-                    label='Chain to mutate from ROI set', condition='ROIOrigin==1 and multiPosition',
-                    help='Specify which chain from the SetOfStructROIs protein should be used for mutation analysis.')
-        
         form.addParam('mutSaturation', params.BooleanParam, default=True,
                        label='Saturation mutagenesis', condition='multiPosition',
                        help='Perform saturation mutagenesis, that is, replace each position '
