@@ -42,8 +42,6 @@ FOLDX_HOME = 'FOLDX_HOME'
 # Supported versions
 
 # THE VERSION OF FOLDX CAN CHANGE IN A FUTURE!
-
-# V1_0 = '1.0'
 V5_1 = '5.1'
 
 # Plugin version
