@@ -3,6 +3,7 @@
 # *
 # * Authors:     Carlos Oscar Sorzano (coss@cnb.csic.es)
 # *              Natalia del Rey
+# *              Judith Maestro Ciria
 # *
 # * Natl. Center of Biotechnology CSIC
 # *
@@ -47,13 +48,13 @@ from pwchem.utils.utils import cleanPDB
 from foldxsuite import Plugin
 from foldxsuite.constants import *
 
-class ProtocolFoldX(EMProtocol):
+class ProtocolDDGFoldX(EMProtocol):
     """
     This protocol computes the change in free energy at the interface between two proteins
     when there is a mutation in one of the proteins. The result is returned standardized as 
     a z-score.
     """
-    _label = 'FoldX'
+    _label = 'DDG FoldX'
     _devStatus = BETA
 
     # -------------------------- DEFINE param functions ----------------------
@@ -84,7 +85,7 @@ class ProtocolFoldX(EMProtocol):
         form.addParam('inputStructROI', params.PointerParam, pointerClass="SetOfStructROIs",
                       label='Input structural ROI', condition='ROIOrigin==1 and multiPosition',
                       allowsNull=False, help='Select the source of the ROIs.') 
-        
+
         form.addParam('mutSaturation', params.BooleanParam, default=True,
                        label='Saturation mutagenesis', condition='multiPosition',
                        help='Perform saturation mutagenesis, that is, replace each position '
@@ -146,87 +147,87 @@ class ProtocolFoldX(EMProtocol):
                 fnMutL.append(mut)
         fnMut = ",".join(fnMutL)
 
-        results_dir = self._getExtraPath('Results_FoldX')
-        if not os.path.exists(results_dir):
-            os.makedirs(results_dir)
+        resultsDir = self._getExtraPath('Results_FoldX')
+        if not os.path.exists(resultsDir):
+            os.makedirs(resultsDir)
 
-        args='--command=Pssm --pdb="%s" --positions="%s" --output-dir=%s'%(fnPDB, fnMut, results_dir)
+        args='--command=Pssm --pdb="%s" --positions="%s" --output-dir=%s'%(fnPDB, fnMut, resultsDir)
         Plugin.runFOLDX(self, args=args)
                 
         os.remove(fnPDB)
     
     def processResults(self):
-        pssm_file = os.path.join(self._getExtraPath('Results_FoldX'), 'PSSM_atomicStructure.txt')
-        pssm_process = self._getExtraPath('FoldX_SM.tsv')
+        pssmFile = os.path.join(self._getExtraPath('Results_FoldX'), 'PSSM_atomicStructure.txt')
+        pssmProcess = self._getExtraPath('FOLDX_SM_FILE')
         
-        out_ddg_sm = ""
+        outDdgSm = ""
 
-        with open(pssm_file, "r") as foutput, open(pssm_process, "w") as fddg:
+        with open(pssmFile, "r") as foutput, open(pssmProcess, "w") as fddg:
             lines = foutput.readlines()
             residues = lines[0].strip().split()  
             
             for line in lines[1:]:
                 parts = line.strip().split()
-                mutation_label = parts[0]
+                mutationLabel = parts[0]
                 energies = parts[1:]
 
                 for i, residue in enumerate(residues):
-                    mutation = f"{mutation_label}{residue}"
+                    mutation = f"{mutationLabel}{residue}"
                     energy = float(energies[i])
-                    out_ddg_sm += f"{mutation}\t{energy}\n"
+                    outDdgSm += f"{mutation}\t{energy}\n"
 
-            out_ddg_sm = out_ddg_sm.rstrip()
-            fddg.write(out_ddg_sm)
+            outDdgSm = outDdgSm.rstrip()
+            fddg.write(outDdgSm)
 
     def calculateZScore(self):
-        pssm_process = self._getExtraPath('FoldX_SM.tsv')
-        ddg_user = self._getExtraPath('FoldX_zscore.tsv')
+        pssmProcess = self._getExtraPath('FOLDX_SM_FILE')
+        ddgUser = self._getExtraPath('FOLDX_ZSCORE_FILE')
 
-        user_mutations = self.toMutateList.get().strip().split('\n')
+        userMutations = self.toMutateList.get().strip().split('\n')
 
-        with open(pssm_process, "r") as f:
+        with open(pssmProcess, "r") as f:
             muts = f.read().split("\n")
-            mut_dict = {line.split("\t")[0]: float(line.split("\t")[1]) for line in muts}
+            mutDict = {line.split("\t")[0]: float(line.split("\t")[1]) for line in muts}
 
             # Calculating averages and standard deviations
-            values = [mut_dict[key] for key in mut_dict]
+            values = [mutDict[key] for key in mutDict]
             avg = np.mean(values)
             std = np.std(values)
 
             # Calculating Z-scores and consensus Z-scores
-            all_zscores_str = "Mut\tddg\tzscore\n"  
-            user_zscores_str = "Mut\tzscore\n"     
-            for key in mut_dict:
-                ddg = mut_dict[key]
+            allZscoresStr = "Mut\tddg\tzscore\n"  
+            userZscoresStr = "Mut\tzscore\n"     
+            for key in mutDict:
+                ddg = mutDict[key]
                 zscore = (ddg - avg) / std        
-                mut_dict[key] = zscore
-                all_zscores_str += f"{key}\t{ddg}\t{zscore}\n"
+                mutDict[key] = zscore
+                allZscoresStr += f"{key}\t{ddg}\t{zscore}\n"
 
-                for user_mut in user_mutations:
-                    if user_mut.endswith("X"):
-                        base_mut = user_mut[:-1]  
-                        if key.startswith(base_mut):
-                            user_zscores_str += f"{key}\t{zscore}\n"
-                    elif user_mut == key:
-                        user_zscores_str += f"{key}\t{zscore}\n"
+                for userMut in userMutations:
+                    if userMut.endswith("X"):
+                        baseMut = userMut[:-1]  
+                        if key.startswith(baseMut):
+                            userZscoresStr += f"{key}\t{zscore}\n"
+                    elif userMut == key:
+                        userZscoresStr += f"{key}\t{zscore}\n"
 
-        all_zscores_str = all_zscores_str.rstrip()  
-        user_zscores_str = user_zscores_str.rstrip()  
+        allZscoresStr = allZscoresStr.rstrip()  
+        userZscoresStr = userZscoresStr.rstrip()  
 
-        with open(pssm_process, "w+") as fddg:
-            fddg.write(all_zscores_str)
+        with open(pssmProcess, "w+") as fddg:
+            fddg.write(allZscoresStr)
 
-        with open(ddg_user, "w+") as fuser:
-            fuser.write(user_zscores_str)
+        with open(ddgUser, "w+") as fuser:
+            fuser.write(userZscoresStr)
 
     def createOutputStep(self):
-        foldx_process = self._getExtraPath('FoldX_SM.tsv')
-        ddg_user = self._getExtraPath('FoldX_zscore.tsv')
+        foldxProcess = self._getExtraPath('FOLDX_SM_FILE')
+        ddgUser = self._getExtraPath('FOLDX_ZSCORE_FILE')
         outputSet = SetOfStats.create(self.getPath())
         mutations = []
-        zscore_map = {}
+        zscoreMap = {}
 
-        with open(ddg_user, "r") as f:
+        with open(ddgUser, "r") as f:
             lines = f.readlines()
             for line in lines[1:]:
                 if not line.strip():
@@ -236,10 +237,10 @@ class ProtocolFoldX(EMProtocol):
                 mutations.append(mutName)
                 if len(cols) > 2:
                     try:
-                        zscore_map[mutName] = float(cols[2])
+                        zscoreMap[mutName] = float(cols[2])
                     except ValueError:
                         pass
-        with open(foldx_process, "r") as f:
+        with open(foldxProcess, "r") as f:
             results = f.readlines()
         for line in results[1:]:
             if not line.strip():
@@ -255,8 +256,8 @@ class ProtocolFoldX(EMProtocol):
                 item.ddg = Float(float(fields[1]))
             except (ValueError, IndexError):
                 item.ddg = Float(0.0)
-            if mutName in zscore_map:
-                item.zscore = Float(zscore_map[mutName])
+            if mutName in zscoreMap:
+                item.zscore = Float(zscoreMap[mutName])
             else:
                 try:
                     item.zscore = Float(float(fields[2]))
@@ -281,10 +282,10 @@ class ProtocolFoldX(EMProtocol):
 
         for modelID, chains in modelsFirstResidue.items():
             for chainID, residues in chains.items():
-                filtered_residues = [res for res in residues if res[1] != 'HOH']
+                filteredResidues = [res for res in residues if res[1] != 'HOH']
                 validChains.add(chainID)
                 if chainID not in chainResidues:
-                    chainResidues[chainID] = filtered_residues
+                    chainResidues[chainID] = filteredResidues
 
         if not self.toMutateList.get().strip():
             errors.append('You have not added any mutation to the list. Do so using the "Add defined '
@@ -315,17 +316,17 @@ class ProtocolFoldX(EMProtocol):
 
                     else:   
                         position = int(position)             
-                        residues_dict = {res[0]: res[1] for res in chainResidues[chain]}
-                        if position not in residues_dict.keys():
-                            first_residue = list(residues_dict.keys())[0]
-                            last_residue = list(residues_dict.keys())[-1]
+                        residuesDict = {res[0]: res[1] for res in chainResidues[chain]}
+                        if position not in residuesDict:
+                            firstResidue = next(iter(residuesDict))
+                            lastResidue = list(residuesDict)[-1]
                             errors.append(f'Position "{position}" in chain "{chain}" for mutation "{line}" is out of range. '
-                                            f'The chain "{chain}" has positions from {first_residue} to {last_residue}.')
+                                            f'The chain "{chain}" has positions from {firstResidue} to {lastResidue}.')
                         
-                        elif AA_THREE_TO_ONE[residues_dict[position]] != aaFrom:
+                        elif AA_THREE_TO_ONE[residuesDict[position]] != aaFrom:
                             errors.append(f'The wild-type aminoacid "{aaFrom}" at position "{position}" in chain "{chain}" '
                                             f'for mutation "{line}" does not match the PDB file. The aminoacid at that position '
-                                            f'is {residues_dict[position]} ({AA_THREE_TO_ONE[residues_dict[position]]}).')
+                                            f'is {residuesDict[position]} ({AA_THREE_TO_ONE[residuesDict[position]]}).')
                 else:
                     errors.append(f'The mutation "{line}" does not have the 4 necessary parameters. ' 
                                    'Mutation format must be "[aaFrom][Chain][Position][aaTo]".')
@@ -333,7 +334,7 @@ class ProtocolFoldX(EMProtocol):
 
     def _summary(self):
         summary = []
-        ddgFile = self._getExtraPath('FoldX_zscore.tsv')
+        ddgFile = self._getExtraPath('FOLDX_ZSCORE_FILE')
         if os.path.exists(ddgFile):
             with open(ddgFile) as f:
               summary.append(f.read())    

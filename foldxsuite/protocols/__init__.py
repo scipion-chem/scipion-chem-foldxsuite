@@ -3,4 +3,4 @@
 # Module to declare protocols
 # Find documentation here: https://scipion-em.github.io/docs/docs/developer/creating-a-protocol
 # **************************************************************************
-from .protocol_FoldX import ProtocolFoldX
+from .protocol_DDG_FoldX import ProtocolDDGFoldX

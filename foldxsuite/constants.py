@@ -30,21 +30,25 @@ AA_THREE_TO_ONE = {'ALA': 'A', 'CYS': 'C', 'ASP': 'D', 'GLU': 'E', 'PHE': 'F',
                    'SER': 'S', 'THR': 'T', 'VAL': 'V', 'TRP': 'W', 'TYR': 'Y',
                    'PTR': 'y', 'TPO': 'p', 'SEP': 's', 'HYP': 'h', 'TYS': 'z',
                    'MLZ': 'k', 'MLY': 'm', 'M3L': 'l', 'H1S': 'o', 'H2S': 'e',
-                   'H3S': 'f', 'ALL': 'X'}
+                   'H3S': 'f', 'ALL': 'X', 'HZP':'P'}
 
+FOLDX_SM_FILE = 'FoldX_SM.tsv'
+FOLDX_ZSCORE_FILE = 'FoldX_zscore.tsv'
 
 # ------------------------------------ INSTALLATION VARIABLES ------------------------------------
 PLUGIN_NAME = 'FOLDXSUITE'
 FOLDX_HOME = 'FOLDX_HOME'
 
 # Supported versions
-V1_0 = '1.0'
+
+# THE VERSION OF FOLDX CAN CHANGE IN A FUTURE!
+V5_1 = '5.1'
 
 # Plugin version
 FOLDXSUITE_VERSION = '0.1'
 
 # Protocol versions 
-FOLDX_DEFAULT_VERSION = V1_0
+FOLDX_DEFAULT_VERSION = V5_1
 
 # Protocol repo versions
-FOLDX_REPO_DEFAULT_VERSION = V1_0
+FOLDX_REPO_DEFAULT_VERSION = V5_1

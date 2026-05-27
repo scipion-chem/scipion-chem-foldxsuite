@@ -28,21 +28,21 @@
 
 import json
 
-from foldxsuite.protocols import ProtocolFoldX
+from foldxsuite.protocols import ProtocolDDGFoldX
 from foldxsuite.constants import *
 
 from pwem.wizards import EmWizard
 import pwem.convert as emconv
 from pwchem.wizards import SelectChainWizardQT, SelectResidueWizardQT
 
-SelectChainWizardQT().addTarget(protocol=ProtocolFoldX,
+SelectChainWizardQT().addTarget(protocol=ProtocolDDGFoldX,
                               targets=['mutChain'],
                               inputs=['inputAtomStruct'],
                               outputs=['mutChain'])
 
 
 class AddMutationsFoldX(EmWizard):
-    _targets = [(ProtocolFoldX, ['addMutation'])]    
+    _targets = [(ProtocolDDGFoldX, ['addMutation'])]    
     
     def getPositions(self, form):
         protocol = form.protocol
@@ -134,7 +134,7 @@ class AddMutationsFoldX(EmWizard):
 
 
 class ClearMutationsFoldX(EmWizard):
-  _targets = [(ProtocolFoldX, ['clearLabel'])]
+  _targets = [(ProtocolDDGFoldX, ['clearLabel'])]
 
   def show(self, form, *params):
     form.setVar('toMutateList', '')
