@@ -84,7 +84,12 @@ class ProtocolDDGFoldX(EMProtocol):
         
         form.addParam('inputStructROI', params.PointerParam, pointerClass="SetOfStructROIs",
                       label='Input structural ROI', condition='ROIOrigin==1 and multiPosition',
-                      allowsNull=False, help='Select the source of the ROIs.') 
+                      allowsNull=False, help='Select the source of the ROIs.')
+
+        form.addParam('ROIChain', params.StringParam, default='', allowsNull=True,
+                      label='Chain to filter (optional)', condition='ROIOrigin==1 and multiPosition',
+                      help='Restrict the mutations generated from the ROIs to this chain only. '
+                           'If left empty, mutations for every chain present in the ROIs will be added.')
 
         form.addParam('mutSaturation', params.BooleanParam, default=True,
                        label='Saturation mutagenesis', condition='multiPosition',
