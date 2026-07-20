@@ -144,7 +144,7 @@ class ProtocolDDGFoldX(EMProtocol):
 
         fnMutL = []
         for i, line in enumerate(self.toMutateList.get().strip().split('\n')):
-            pattern = re.compile(r'([A-Za-z]+)([A-Za-z]+)([^a-zA-Z]+)([A-Za-z]+)')
+            pattern = re.compile(r'([A-Za-z])([A-Za-z]+)([^a-zA-Z]+)([A-Za-z]+)')
             match = re.match(pattern, line)
             if match:
                 aaFrom, chain, position, aaTo = match.groups()
@@ -299,7 +299,7 @@ class ProtocolDDGFoldX(EMProtocol):
 
         else:
             for i, line in enumerate(self.toMutateList.get().strip().split('\n')):
-                pattern = re.compile(r'([A-Za-z]+)([A-Za-z]+)([^a-zA-Z]+)([A-Za-z]+)')
+                pattern = re.compile(r'([A-Za-z])([A-Za-z]+)([^a-zA-Z]+)([A-Za-z]+)')
                 match = re.match(pattern, line)
 
                 if match:
