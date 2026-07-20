@@ -138,9 +138,10 @@ class ProtocolDDGFoldX(EMProtocol):
         self._insertFunctionStep(self.createOutputStep)
 
     def computeDDG(self):
+        workingDir = self._getExtraPath()
         fnPDB = "atomicStructure.pdb"
-        cleanPDB(self.inputAtomStruct.get().getFileName(),fnPDB)
-        
+        cleanPDB(self.inputAtomStruct.get().getFileName(), os.path.join(workingDir, fnPDB))
+
         fnMutL = []
         for i, line in enumerate(self.toMutateList.get().strip().split('\n')):
             pattern = re.compile(r'([A-Za-z]+)([A-Za-z]+)([^a-zA-Z]+)([A-Za-z]+)')
@@ -157,9 +158,9 @@ class ProtocolDDGFoldX(EMProtocol):
             os.makedirs(resultsDir)
 
         args='--command=Pssm --pdb="%s" --positions="%s" --output-dir=%s'%(fnPDB, fnMut, resultsDir)
-        Plugin.runFOLDX(self, args=args)
-                
-        os.remove(fnPDB)
+        Plugin.runFOLDX(self, args=args, cwd=workingDir)
+
+        os.remove(os.path.join(workingDir, fnPDB))
     
     def processResults(self):
         pssmFile = os.path.join(self._getExtraPath('Results_FoldX'), 'PSSM_atomicStructure.txt')
