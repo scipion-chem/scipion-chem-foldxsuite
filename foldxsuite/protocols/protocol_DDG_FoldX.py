@@ -84,7 +84,12 @@ class ProtocolDDGFoldX(EMProtocol):
         
         form.addParam('inputStructROI', params.PointerParam, pointerClass="SetOfStructROIs",
                       label='Input structural ROI', condition='ROIOrigin==1 and multiPosition',
-                      allowsNull=False, help='Select the source of the ROIs.') 
+                      allowsNull=False, help='Select the source of the ROIs.')
+
+        form.addParam('ROIChain', params.StringParam, default='', allowsNull=True,
+                      label='Chain to filter (optional)', condition='ROIOrigin==1 and multiPosition',
+                      help='Restrict the mutations generated from the ROIs to this chain only. '
+                           'If left empty, mutations for every chain present in the ROIs will be added.')
 
         form.addParam('mutSaturation', params.BooleanParam, default=True,
                        label='Saturation mutagenesis', condition='multiPosition',
@@ -133,12 +138,13 @@ class ProtocolDDGFoldX(EMProtocol):
         self._insertFunctionStep(self.createOutputStep)
 
     def computeDDG(self):
+        workingDir = self._getExtraPath()
         fnPDB = "atomicStructure.pdb"
-        cleanPDB(self.inputAtomStruct.get().getFileName(),fnPDB)
-        
+        cleanPDB(self.inputAtomStruct.get().getFileName(), os.path.join(workingDir, fnPDB))
+
         fnMutL = []
         for i, line in enumerate(self.toMutateList.get().strip().split('\n')):
-            pattern = re.compile(r'([A-Za-z]+)([A-Za-z]+)([^a-zA-Z]+)([A-Za-z]+)')
+            pattern = re.compile(r'([A-Za-z])([A-Za-z]+)([^a-zA-Z]+)([A-Za-z]+)')
             match = re.match(pattern, line)
             if match:
                 aaFrom, chain, position, aaTo = match.groups()
@@ -152,9 +158,9 @@ class ProtocolDDGFoldX(EMProtocol):
             os.makedirs(resultsDir)
 
         args='--command=Pssm --pdb="%s" --positions="%s" --output-dir=%s'%(fnPDB, fnMut, resultsDir)
-        Plugin.runFOLDX(self, args=args)
-                
-        os.remove(fnPDB)
+        Plugin.runFOLDX(self, args=args, cwd=workingDir)
+
+        os.remove(os.path.join(workingDir, fnPDB))
     
     def processResults(self):
         pssmFile = os.path.join(self._getExtraPath('Results_FoldX'), 'PSSM_atomicStructure.txt')
@@ -293,7 +299,7 @@ class ProtocolDDGFoldX(EMProtocol):
 
         else:
             for i, line in enumerate(self.toMutateList.get().strip().split('\n')):
-                pattern = re.compile(r'([A-Za-z]+)([A-Za-z]+)([^a-zA-Z]+)([A-Za-z]+)')
+                pattern = re.compile(r'([A-Za-z])([A-Za-z]+)([^a-zA-Z]+)([A-Za-z]+)')
                 match = re.match(pattern, line)
 
                 if match:
