@@ -33,9 +33,9 @@ Wrapper around the FoldX method from https://foldxsuite.crg.es/documentation#man
 import numpy as np
 import os, re
 
-from pyworkflow.constants import BETA
 from pyworkflow.object import Object, Float, String
 import pyworkflow.protocol.params as params
+from pyworkflow.protocol.constants import STEPS_PARALLEL
 from pyworkflow.utils import Message
 
 from pwem.protocols import EMProtocol
@@ -55,7 +55,7 @@ class ProtocolDDGFoldX(EMProtocol):
     a z-score.
     """
     _label = 'DDG FoldX'
-    _devStatus = BETA
+    stepsExecutionMode = STEPS_PARALLEL
 
     # -------------------------- DEFINE param functions ----------------------
     def _addMutationForm(self, form):
@@ -128,20 +128,29 @@ class ProtocolDDGFoldX(EMProtocol):
         group.addParam('clearLabel', params.LabelParam,
                        label='Clear mutation list',
                        help='Clear mutations list')
-        
-        
+
+        form.addParallelSection(threads=4, mpi=1)
+
+
     # --------------------------- STEPS functions ------------------------------
     def _insertAllSteps(self):
-        self._insertFunctionStep(self.computeDDG)
-        self._insertFunctionStep(self.processResults)
-        self._insertFunctionStep(self.calculateZScore)
-        self._insertFunctionStep(self.createOutputStep)
+        prepId = self._insertFunctionStep(self.prepareInputStep, prerequisites=[])
 
-    def computeDDG(self):
-        workingDir = self._getExtraPath()
-        fnPDB = "atomicStructure.pdb"
-        cleanPDB(self.inputAtomStruct.get().getFileName(), os.path.join(workingDir, fnPDB))
+        nChunks = max(1, self.numberOfThreads.get())
+        chunkStepIds = []
+        for it in range(nChunks):
+            stepId = self._insertFunctionStep(self.runFoldXChunkStep, it, nChunks,
+                                              prerequisites=[prepId])
+            chunkStepIds.append(stepId)
 
+        processId = self._insertFunctionStep(self.processResults, prerequisites=chunkStepIds)
+        zscoreId = self._insertFunctionStep(self.calculateZScore, prerequisites=[processId])
+        self._insertFunctionStep(self.createOutputStep, prerequisites=[zscoreId])
+
+    def _getFoldXPDB(self):
+        return os.path.join(self._getExtraPath(), "atomicStructure.pdb")
+
+    def _getMutationCodes(self):
         fnMutL = []
         for i, line in enumerate(self.toMutateList.get().strip().split('\n')):
             pattern = re.compile(r'([A-Za-z])([A-Za-z]+)([^a-zA-Z]+)([A-Za-z]+)')
@@ -151,27 +160,44 @@ class ProtocolDDGFoldX(EMProtocol):
                 mut = aaFrom + chain + position + "a"
             if mut not in fnMutL:
                 fnMutL.append(mut)
-        fnMut = ",".join(fnMutL)
+        return fnMutL
 
-        resultsDir = self._getExtraPath('Results_FoldX')
-        if not os.path.exists(resultsDir):
-            os.makedirs(resultsDir)
+    def prepareInputStep(self):
+        cleanPDB(self.inputAtomStruct.get().getFileName(), self._getFoldXPDB())
 
-        args='--command=Pssm --pdb="%s" --positions="%s" --output-dir=%s'%(fnPDB, fnMut, resultsDir)
+    def runFoldXChunkStep(self, it, nChunks):
+        # Striped split: chunk "it" gets positions[it], positions[it+nChunks], ...
+        chunk = self._getMutationCodes()[it::nChunks]
+        if not chunk:
+            return
+
+        workingDir = self._getExtraPath()
+        fnPDB = "atomicStructure.pdb"
+        fnMut = ",".join(chunk)
+
+        chunkDir = os.path.abspath(self._getExtraPath('Results_FoldX', 'chunk_%d' % it))
+        os.makedirs(chunkDir, exist_ok=True)
+
+        args='--command=Pssm --pdb="%s" --positions="%s" --output-dir=%s'%(fnPDB, fnMut, chunkDir)
         Plugin.runFOLDX(self, args=args, cwd=workingDir)
 
-        os.remove(os.path.join(workingDir, fnPDB))
-    
     def processResults(self):
-        pssmFile = os.path.join(self._getExtraPath('Results_FoldX'), 'PSSM_atomicStructure.txt')
+        resultsDir = self._getExtraPath('Results_FoldX')
         pssmProcess = self._getExtraPath('FOLDX_SM_FILE')
-        
-        outDdgSm = ""
 
-        with open(pssmFile, "r") as foutput, open(pssmProcess, "w") as fddg:
-            lines = foutput.readlines()
-            residues = lines[0].strip().split()  
-            
+        outDdgSm = ""
+        residues = None
+
+        for chunkName in sorted(os.listdir(resultsDir)):
+            chunkPssm = os.path.join(resultsDir, chunkName, 'PSSM_atomicStructure.txt')
+            if not os.path.isfile(chunkPssm):
+                continue
+
+            with open(chunkPssm, "r") as foutput:
+                lines = foutput.readlines()
+            if residues is None:
+                residues = lines[0].strip().split()
+
             for line in lines[1:]:
                 parts = line.strip().split()
                 mutationLabel = parts[0]
@@ -182,8 +208,11 @@ class ProtocolDDGFoldX(EMProtocol):
                     energy = float(energies[i])
                     outDdgSm += f"{mutation}\t{energy}\n"
 
-            outDdgSm = outDdgSm.rstrip()
+        outDdgSm = outDdgSm.rstrip()
+        with open(pssmProcess, "w") as fddg:
             fddg.write(outDdgSm)
+
+        os.remove(self._getFoldXPDB())
 
     def calculateZScore(self):
         pssmProcess = self._getExtraPath('FOLDX_SM_FILE')
