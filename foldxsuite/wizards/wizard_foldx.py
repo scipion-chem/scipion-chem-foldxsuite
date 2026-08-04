@@ -149,7 +149,7 @@ class AddMutationsFoldX(EmWizard):
         mutations = self.getMutations(form)
 
         toMutateList = protocol.toMutateList.get()
-        existing = set(line.strip() for line in toMutateList.strip().split("\n") if line.strip())
+        existing = {line.strip() for line in toMutateList.strip().split("\n") if line.strip()}
         newMutations = [m for m in mutations if m not in existing]
         toMutateList += "\n" + "\n".join(newMutations)
         form.setVar('toMutateList', toMutateList.strip())
