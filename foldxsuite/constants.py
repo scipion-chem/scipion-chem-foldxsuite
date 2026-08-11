@@ -24,13 +24,7 @@
 # *
 # **************************************************************************
 
-AA_THREE_TO_ONE = {'ALA': 'A', 'CYS': 'C', 'ASP': 'D', 'GLU': 'E', 'PHE': 'F', 
-                   'GLY': 'G', 'HIS': 'H', 'ILE': 'I', 'LYS': 'K', 'LEU': 'L', 
-                   'MET': 'M', 'ASN': 'N', 'PRO': 'P', 'GLN': 'Q', 'ARG': 'R', 
-                   'SER': 'S', 'THR': 'T', 'VAL': 'V', 'TRP': 'W', 'TYR': 'Y',
-                   'PTR': 'y', 'TPO': 'p', 'SEP': 's', 'HYP': 'h', 'TYS': 'z',
-                   'MLZ': 'k', 'MLY': 'm', 'M3L': 'l', 'H1S': 'o', 'H2S': 'e',
-                   'H3S': 'f', 'ALL': 'X', 'HZP': 'p'}
+from pwchem.wizards.wizard_add_mutations import AA_THREE_TO_ONE
 
 FOLDX_SM_FILE = 'FoldX_SM.tsv'
 FOLDX_ZSCORE_FILE = 'FoldX_zscore.tsv'
