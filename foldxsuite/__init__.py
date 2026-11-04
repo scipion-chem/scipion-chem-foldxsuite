@@ -34,7 +34,6 @@ import pwem
 # Plugin imports
 from .constants import *
 
-__version__ = "0.1"  # plugin version
 _logo = "foldX_icon.png"
 _references = ['schymkowitz2005']
 
